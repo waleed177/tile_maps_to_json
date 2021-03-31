@@ -69,7 +69,10 @@ func _on_resource_saved(resource):
 		save_path = scene.path
 	else:
 		save_path = scene.filename.get_basename() + ".json"
-	file.open(save_path, File.WRITE)
+	var error = file.open(save_path, File.WRITE)
+	if error != 0:
+		print("Failed to save file " + save_path)
+		return
 	file.store_string(JSON.print(save))
 	file.close()
 	print("Saved Tilemap at " + save_path)
