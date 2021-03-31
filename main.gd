@@ -19,6 +19,8 @@ func tile_map_to_ids(tilemap: TileMap, size: Vector2):
 		for x in size.x:
 			var tile_id = tilemap.get_cell(x, y)
 			var tile_name = tilemap.tile_set.tile_get_name(tile_id) if tile_id >= 0 else null
+			if tile_name != null and tile_name.is_valid_integer():
+				tile_name = int(tile_name)
 			ids.append(tile_name)
 	return ids
 
