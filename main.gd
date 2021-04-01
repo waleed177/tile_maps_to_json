@@ -7,11 +7,8 @@ func _enter_tree():
 	add_custom_type("TileMapInfo", "Node2D", preload("./tilemap_info.gd"), null) 
 	connect("resource_saved", self, "_on_resource_saved")
 
-
 func _exit_tree():
 	remove_custom_type("TileMapInfo")
-
-
 
 func tile_map_to_ids(tilemap: TileMap, size: Vector2):
 	var ids = []
@@ -49,10 +46,18 @@ func _on_resource_saved(resource):
 					}
 					for property in prefab.get_property_list():
 						if property.usage == 8199:
-							obj[property.name] = prefab.get(property.name)
+							var value = prefab.get(property.name)
+							if property.name == "prefab":
+								print("WARNING! A prefab (" + prefab.name + " in " + node.name + ") has a property named prefab which conflicts with the built in property 'prefab', rename this property to something else.")
+								continue
+							if value != null and value != "":
+								obj[property.name] = value
 					current_layer[index] = obj
 				else:
 					print("WARNING! A prefab (" + prefab.name + " in " + node.name + ") was not placed due to it overlapping a tile!")
+	
+	layers.invert()
+	tilesets.invert()
 	
 	var save = {
 		size = [tilemap_size.x, tilemap_size.y],
