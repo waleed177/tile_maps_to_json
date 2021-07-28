@@ -1,3 +1,27 @@
+# This file belongs to the tile_map_to_json plugin
+#
+# MIT License
+# 
+# Copyright (c) 2021 waleed177
+# 
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+# 
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
+# 
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
+# 
 tool
 extends EditorPlugin
 
@@ -10,8 +34,9 @@ func _enter_tree():
 func _exit_tree():
 	remove_custom_type("TileMapInfo")
 
-func tile_map_to_ids(tilemap: TileMap, size: Vector2):
+func tile_map_to_ids_and_damages(tilemap: TileMap, size: Vector2):
 	var ids = []
+	var damages = []
 	for y in size.y:
 		for x in size.x:
 			var tile_id = tilemap.get_cell(x, y)
@@ -19,10 +44,14 @@ func tile_map_to_ids(tilemap: TileMap, size: Vector2):
 			if tile_name != null and tile_name.is_valid_integer():
 				tile_name = int(tile_name)
 			ids.append(tile_name)
-	return ids
+			damages.append(0)
+	return {
+		ids = ids,
+		damages = damages,
+	}
 
 func _on_resource_saved(resource):
-	var scene = get_editor_interface().get_edited_scene_root()
+	var scene = get_editor_interface().get_edited_scene_root() as TilemapInfo
 	if not scene is TilemapInfo:
 		return false
 	
@@ -30,10 +59,25 @@ func _on_resource_saved(resource):
 	
 	var layers = []
 	var tilesets = []
+	var damages = []
 	
 	for node in scene.get_children():
 		if node is TileMap:
-			layers.append(tile_map_to_ids(node, tilemap_size))
+			var tile_set_id = -99
+			for i in len(scene.tilesets):
+				var tileset = scene.tilesets[i]
+				if tileset.resource_path == node.tile_set.resource_path:
+					tile_set_id = -(i+1)
+					break
+			var damages_and_ids = tile_map_to_ids_and_damages(node, tilemap_size)
+			
+			if scene.prepend_tileset_id:
+				layers.append([tile_set_id] + damages_and_ids.ids)
+			else:
+				layers.append(damages_and_ids.ids)
+			
+			damages.append(damages_and_ids.damages)
+			
 			var current_layer = layers[len(layers)-1]
 			tilesets.append(node.tile_set.resource_path)
 			for prefab in node.get_children():
@@ -62,6 +106,7 @@ func _on_resource_saved(resource):
 	var save = {
 		size = [tilemap_size.x, tilemap_size.y],
 		layers = layers,
+		damages = damages,
 		tilesets = tilesets,
 	}
 	
