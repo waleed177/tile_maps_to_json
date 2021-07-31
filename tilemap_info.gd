@@ -22,10 +22,41 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 # 
+tool
 extends Node2D
 
 export(Vector2) var size = Vector2(5, 5)
 export(String) var path = ""
 export(bool) var prepend_tileset_id = false
+export(Vector2) var grid_size = Vector2(64, 64) 
 export(Array, Resource) var tilesets: Array
+export(Vector2) var layer_offset: Vector2
+export(bool) var draw_highlight: bool = true
+export(int) var highlight_height: int = 0
+export(float) var highlight_width: float = 12
+export(Color) var highlight_color: Color = Color.red
+export(bool) var auto_positioning: bool = true
 
+func _process(delta):
+	if auto_positioning:
+		var i = Vector2(0, 0)
+		for child in get_children():
+			if child is TileMap:
+				child.position = i
+				i += layer_offset
+	update()
+
+func _draw():
+	if draw_highlight:
+		draw_rect(
+			Rect2(
+				-highlight_width/2,
+				layer_offset.y * highlight_height -highlight_width/2,
+				grid_size.x*size.x + highlight_width/2,
+				grid_size.y*size.y + highlight_width/2
+			),
+			highlight_color,
+			false,
+			highlight_width
+		)
+	
